@@ -4,21 +4,16 @@ using UnityEngine;
 
 //---------------------------------------------------
 // NAME: Jarl Ramos/Geoffrey De Palme
-// GAME: Resonant Destiny
+// GAME: Project R.D./Resonant Destiny
 // FILE: BattleStateMaschine.cs
 // ORGN: Unity - RD Prototype I
-// DATE: 19 August 2022
+// DATE: 19 August 2022 - Modified 23 April 2023
 //---------------------------------------------------
 // Description:
 // This script contains the state machines handling
 // the different phases of a battle.
-//---------------------------------------------------
-// PROPERTY OF Mr. De Palme - DO NOT STEAL
-//---------------------------------------------------
-
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-// WARNING: SCRIPT STILL UNDER CONSTRUCTION. DO NOT USE.
-// !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+// Note: This script is still a work in progress.
+// --------------------------------------------------
 
 public class BattleStateMaschine : MonoBehaviour
 {
@@ -29,8 +24,8 @@ public class BattleStateMaschine : MonoBehaviour
         Begin,
         EnemySelect,
         WaitForInput,
-        TakeAction,
-        PerformAction
+        PerformAction,
+        End
     }
 
     // manages the user interface 
@@ -41,10 +36,8 @@ public class BattleStateMaschine : MonoBehaviour
         End
     }
 
-    private bool eQueueOk = true;
-    private bool aQueueOk = true;
-    private bool aInitVerified = true;
-    private bool eInitVerified = true;
+    private bool queueOk = true;
+    private bool InitVerified = true;
     private BattleSkill CurrentSkill;
     private SetAction CurrentAction;
     public Act bState;
@@ -52,14 +45,10 @@ public class BattleStateMaschine : MonoBehaviour
     public TurnHandler AllysChoice;
 
     private GameObject CurrentActor;
-    public GameObject Selector;
-    public GameObject EnemyButton;
-    public GameObject AttackPanel;
-    public GameObject SelectEnemyPanel;
 
-    public Transform Spacer;
-
-    public List<GameObject> RoundQueue = new List<GameObject>();
+    // list contains all the characters and enemies that will fight in the
+    // battle
+    public List<GameObject> Combatants = new List<GameObject>();
     public List<GameObject> AlliesInBattle = new List<GameObject>();
     public List<GameObject> EnemiesInBattle = new List<GameObject>();
     public List<GameObject> AlliesToManage = new List<GameObject>();
@@ -68,13 +57,8 @@ public class BattleStateMaschine : MonoBehaviour
     void Start()
     {
         bState = Act.Roll;
-        EnemiesInBattle.AddRange(GameObject.FindGameObjectsWithTag("Enemy"));
-        AlliesInBattle.AddRange(GameObject.FindGameObjectsWithTag("Ally"));
+        RegisterCombatants();
         actorInput = PlayerGUI.Activate;
-        Selector.SetActive(false);
-        AttackPanel.SetActive(false);
-        SelectEnemyPanel.SetActive(false);
-        EnemyButtons();
     }
 
     // Update is called once per frame
@@ -85,31 +69,24 @@ public class BattleStateMaschine : MonoBehaviour
             case (Act.Roll):
                 // roll for initiative (calculate initiative value to be used for
                 // determining turn order)
-                foreach (GameObject i in EnemiesInBattle)
+                foreach (GameObject i in Combatants)
                 {
-                    EnemyStateMaschine eMaschine = i.GetComponent<EnemyStateMaschine>();
-                    if (!eMaschine.initFinished)
+                    // "turns on" each combatant
+                    FighterStateMaschine fMaschine = i.GetComponent<FighterStateMaschine>();
+                    fMaschine.fState = FighterStateMaschine.FighterState.Processing;
+                    if (!fMaschine.initFinished)
                     {
-                        eInitVerified = false;
+                        InitVerified = false;
                     }
                     else
                     {
-                        eInitVerified = true;
+                        InitVerified = true;
                     }
                 }
-                foreach (GameObject j in AlliesInBattle)
-                {
-                    AllyStateMaschine aMaschine = j.GetComponent<AllyStateMaschine>();
-                    if (!aMaschine.initFinished)
-                    {
-                        aInitVerified = false;
-                    }
-                    else
-                    {
-                        aInitVerified = true;
-                    }
-                }
-                if (eInitVerified && aInitVerified)
+
+                // if initiative was determined for all combatants, move to the
+                // next state
+                if (InitVerified)
                 {
                     bState = Act.Begin;
                 }
@@ -121,77 +98,43 @@ public class BattleStateMaschine : MonoBehaviour
                 break;
             case (Act.EnemySelect):
                 // enemies will select their actions
-                foreach (GameObject k in RoundQueue)
+                foreach (GameObject k in Combatants)
                 {
                     if (k.CompareTag("Enemy"))
                     {
-                        EnemyStateMaschine eMaschine = k.GetComponent<EnemyStateMaschine>();
-                        eMaschine.eState = EnemyStateMaschine.EnemyState.SelectAction;
+                        FighterStateMaschine fMaschine = k.GetComponent<FighterStateMaschine>();
+                        fMaschine.fState = FighterStateMaschine.FighterState.SelectAction;
                     }
                 }
                 bState = Act.WaitForInput;
                 break;
             case (Act.WaitForInput):
-                // will let player input actions for their party
-                foreach (GameObject l in RoundQueue)
+                // waits for the player to input actions for their party
+                foreach (GameObject l in Combatants)
                 {
-                    if (l.CompareTag("Enemy"))
+                    // scan combatants to check if they have selected all their
+                    // actions for the round
+                    FighterStateMaschine fMaschine = l.GetComponent<FighterStateMaschine>();
+                    if (!fMaschine.Actions.validated)
                     {
-                        EnemyStateMaschine eMaschine = l.GetComponent<EnemyStateMaschine>();
-                        if (!eMaschine.EAction.validated)
-                        {
-                            eQueueOk = false;
-                        }
-                        else
-                        {
-                            eQueueOk = true;
-                        }
-                    }
-                    if (l.CompareTag("Ally"))
-                    {
-                        AllyStateMaschine aMaschine = l.GetComponent<AllyStateMaschine>();
-                        if (!aMaschine.AAction.validated)
-                        {
-                            aQueueOk = false;
-                        }
-                        else
-                        {
-                            aQueueOk = true;
-                        }
-                    }
+                        queueOk = false;
+                        break;
+                    } 
+                    else queueOk = true;
                 }
-
-                // once actions of all combatants are verified
-                if (eQueueOk && aQueueOk)
-                {
-                    bState = Act.TakeAction;
-                }
-                break;
-            case (Act.TakeAction):
-                // combatants will now prepare their actions
-                //
-                // if there is no more in the queue, the turn ends and is reset
-                if (RoundQueue.Count == 0)
-                {
-                    bState = Act.Roll;
-                }
-                GameObject Actor = RoundQueue[0];
-                if (Actor.CompareTag("Enemy"))
-                {
-                    EnemyStateMaschine eMaschine = Actor.GetComponent<EnemyStateMaschine>();
-                    // eMaschine.EnemysTarget = ...
-                    eMaschine.eState = EnemyStateMaschine.EnemyState.PerformAction;
-                }
-                if (Actor.CompareTag("Ally"))
-                {
-                    AllyStateMaschine aMaschine = Actor.GetComponent<AllyStateMaschine>();
-                    aMaschine.AAction = AllysChoice;
-                    // aMaschine.allysTarget = ...
-                    aMaschine.aState = AllyStateMaschine.AllyState.PerformAction;
-                }
-                bState = Act.PerformAction;
+                // once actions of all combatants have been validated
+                if (queueOk) bState = Act.PerformAction;
                 break;
             case (Act.PerformAction):
+                // this state is where the combatants will start fighting
+                // after their actions have been selected
+                ExecuteTurns();
+                break;
+            case (Act.End):
+                // ends current round
+                EndRound();
+                // begins the next round
+                bState = Act.Roll;
                 break;
         }
 
@@ -207,70 +150,75 @@ public class BattleStateMaschine : MonoBehaviour
         }
     }
 
-    // these buttons will correspond to enemies and the player can choose
-    // who to attack by pressing their respective button
-    public void EnemyButtons()
+    // identifies every entity that will participate in combat
+    public void RegisterCombatants()
     {
-        ;
-    }
-
-    // input functions let player choose actions for their characters
-    public void Input1()
-    {
-        ;
-    }
-
-    public void Input2()
-    {
-        ;
-    }
-
-    // ends the process of inputting actions
-    public void AllyInputEnd()
-    {
-        ;
+        Combatants.AddRange(GameObject.FindGameObjectsWithTag("Enemy"));
+        Combatants.AddRange(GameObject.FindGameObjectsWithTag("Ally"));
+        EnemiesInBattle.AddRange(GameObject.FindGameObjectsWithTag("Enemy"));
+        AlliesInBattle.AddRange(GameObject.FindGameObjectsWithTag("Ally"));
     }
 
     // uses initiative rolls to determine turn order
+    // standard bubble sort using the initiative roll of each combatant
     public void TurnOrderDeterminator()
     {
-        foreach (GameObject m in AlliesInBattle)
+        bool isSwapped;
+        do
         {
-            RoundQueue.Add(m);
-        }
+            isSwapped = false;
+            for (int i = 0; i < Combatants.Count - 2; ++i)
+            {
+                int init1;
+                int init2;
 
-        foreach (GameObject n in EnemiesInBattle)
-        {
-            RoundQueue.Add(n);
-        }
+                if (Combatants[i].CompareTag("Ally"))
+                {
+                    FighterStateMaschine FSM1 = Combatants[i].GetComponent<FighterStateMaschine>();
+                    FighterStateMaschine FSM2 = Combatants[i + 1].GetComponent<FighterStateMaschine>();
+                    init1 = FSM1.initRoll;
+                    init2 = FSM2.initRoll;
 
-        // TODO: Find a better way to sort these
-        RoundQueue.Sort((rq1, rq2) =>
+                    if (init1 < init2)
+                    {
+                        _ = new GameObject();
+                        GameObject temp = Combatants[i];
+                        Combatants[i] = Combatants[i + 1];
+                        Combatants[i + 1] = temp;
+                        isSwapped = true;
+                    }
+                }
+            }
+        } while (isSwapped);
+    }
+
+    // begins the fight
+    public void ExecuteTurns()
+    {
+        StartCoroutine(ActionSequence());
+        bState = Act.End;
+    }
+
+    // brings the round to a conclusion and "turns off" each combatant
+    public void EndRound()
+    {
+        foreach (GameObject n in Combatants)
         {
-            int ini1 = 0;
-            int ini2 = 0;
-            
-            if (rq1.CompareTag("Ally"))
-            {
-                AllyStateMaschine act1 = rq1.GetComponent<AllyStateMaschine>();
-                ini1 = act1.initRoll;
-            }
-            if (rq1.CompareTag("Enemy"))
-            {
-                EnemyStateMaschine act1 = rq1.GetComponent<EnemyStateMaschine>();
-                ini1 = act1.initRoll;
-            }
-            if (rq2.CompareTag("Ally"))
-            {
-                AllyStateMaschine act2 = rq2.GetComponent<AllyStateMaschine>();
-                ini2 = act2.initRoll;
-            }
-            if (rq2.CompareTag("Enemy"))
-            {
-                EnemyStateMaschine act2 = rq2.GetComponent<EnemyStateMaschine>();
-                ini2 = act2.initRoll;
-            }
-            return ini2.CompareTo(ini1);
-        });
+            FighterStateMaschine FSM = n.GetComponent<FighterStateMaschine>();
+            FSM.fState = FighterStateMaschine.FighterState.Finished;
+        }
+    }
+
+    // coroutine that will have each combatant execute their actions
+    // it will wait until the combatant is finished fighting
+    IEnumerator ActionSequence()
+    {
+        foreach (GameObject m in Combatants)
+        {
+            FighterStateMaschine FSM = m.GetComponent<FighterStateMaschine>();
+            FSM.fState = FighterStateMaschine.FighterState.PerformAction;
+            yield return new WaitUntil(() => FSM.fState == FighterStateMaschine.FighterState.Waiting);
+        }
+        
     }
 }

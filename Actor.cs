@@ -4,7 +4,7 @@ using UnityEngine;
 
 //---------------------------------------------------
 // NAME: Jarl Ramos/Geoffrey De Palme
-// GAME: Resonant Destiny
+// GAME: Project R.D./Resonant Destiny
 // FILE: Actor.cs
 // ORGN: Unity - RD Prototype I
 // DATE: 15 August 2022
@@ -14,8 +14,6 @@ using UnityEngine;
 // contains their statistics and qualities that will
 // be used in the functions of the game such as the
 // battle system.
-//---------------------------------------------------
-// PROPERTY OF Mr. De Palme - DO NOT STEAL
 //---------------------------------------------------
 
 // defines all properties of a game actor
@@ -39,6 +37,8 @@ public class Actor : MonoBehaviour
     public Statistic Pe;  // Perception
 
     // secondary statistics
+    public Statistic CurHP;  // Current HP
+    public Statistic CurMP;  // Current MP
     public Statistic MaxHP;  // Max HP
     public Statistic MaxMP;  // Max MP
     public Statistic AP;     // Action Points
