@@ -264,6 +264,7 @@ public class FighterStateMaschine : MonoBehaviour
                        animSpeed * Time.deltaTime));
     }
 
+    // reset the combatant's queue of actions
     public void ResetActions() { Actions.ActorsActions.Clear(); }
 
     // simple coroutine simulating what happens during the fight
