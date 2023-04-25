@@ -12,7 +12,6 @@ using UnityEngine;
 // Description:
 // This script contains the state machines handling
 // the different phases of a battle.
-// Note: This script is still a work in progress.
 // --------------------------------------------------
 
 public class BattleStateMaschine : MonoBehaviour
@@ -38,13 +37,9 @@ public class BattleStateMaschine : MonoBehaviour
 
     private bool queueOk = true;
     private bool InitVerified = true;
-    private BattleSkill CurrentSkill;
-    private SetAction CurrentAction;
     public Act bState;
     public PlayerGUI actorInput;
     public TurnHandler AllysChoice;
-
-    private GameObject CurrentActor;
 
     // list contains all the characters and enemies that will fight in the
     // battle
@@ -53,11 +48,14 @@ public class BattleStateMaschine : MonoBehaviour
     public List<GameObject> EnemiesInBattle = new List<GameObject>();
     public List<GameObject> AlliesToManage = new List<GameObject>();
 
+    // IMPORTANT: All coroutines must be encapsulated in one state case with
+    // no other instructions or functions contained inside
+
     // Start is called before the first frame update
     void Start()
     {
         bState = Act.Roll;
-        RegisterCombatants();
+        // RegisterCombantants();
         actorInput = PlayerGUI.Activate;
     }
 
@@ -67,6 +65,7 @@ public class BattleStateMaschine : MonoBehaviour
         switch (bState)
         {
             case (Act.Roll):
+                RegisterCombatants();
                 // roll for initiative (calculate initiative value to be used for
                 // determining turn order)
                 foreach (GameObject i in Combatants)
@@ -83,13 +82,9 @@ public class BattleStateMaschine : MonoBehaviour
                         InitVerified = true;
                     }
                 }
-
                 // if initiative was determined for all combatants, move to the
                 // next state
-                if (InitVerified)
-                {
-                    bState = Act.Begin;
-                }
+                if (InitVerified) bState = Act.Begin;
                 break;
             case (Act.Begin):
                 // determine turn order
@@ -115,11 +110,7 @@ public class BattleStateMaschine : MonoBehaviour
                     // scan combatants to check if they have selected all their
                     // actions for the round
                     FighterStateMaschine fMaschine = l.GetComponent<FighterStateMaschine>();
-                    if (!fMaschine.Actions.validated)
-                    {
-                        queueOk = false;
-                        break;
-                    } 
+                    if (!fMaschine.Actions.validated) queueOk = false;
                     else queueOk = true;
                 }
                 // once actions of all combatants have been validated
@@ -131,9 +122,7 @@ public class BattleStateMaschine : MonoBehaviour
                 ExecuteTurns();
                 break;
             case (Act.End):
-                // ends current round
-                EndRound();
-                // begins the next round
+                // ends current round and begins the next round
                 bState = Act.Roll;
                 break;
         }
@@ -172,53 +161,44 @@ public class BattleStateMaschine : MonoBehaviour
                 int init1;
                 int init2;
 
-                if (Combatants[i].CompareTag("Ally"))
-                {
-                    FighterStateMaschine FSM1 = Combatants[i].GetComponent<FighterStateMaschine>();
-                    FighterStateMaschine FSM2 = Combatants[i + 1].GetComponent<FighterStateMaschine>();
-                    init1 = FSM1.initRoll;
-                    init2 = FSM2.initRoll;
+                FighterStateMaschine FSM1 = Combatants[i].GetComponent<FighterStateMaschine>();
+                FighterStateMaschine FSM2 = Combatants[i + 1].GetComponent<FighterStateMaschine>();
+                init1 = FSM1.initRoll;
+                init2 = FSM2.initRoll;
 
-                    if (init1 < init2)
-                    {
-                        _ = new GameObject();
-                        GameObject temp = Combatants[i];
-                        Combatants[i] = Combatants[i + 1];
-                        Combatants[i + 1] = temp;
-                        isSwapped = true;
-                    }
+                if (init1 < init2)
+                {
+                    _ = new GameObject();
+                    GameObject temp = Combatants[i];
+                    Combatants[i] = Combatants[i + 1];
+                    Combatants[i + 1] = temp;
+                    isSwapped = true;
                 }
+
             }
         } while (isSwapped);
     }
 
     // begins the fight
-    public void ExecuteTurns()
-    {
-        StartCoroutine(ActionSequence());
-        bState = Act.End;
-    }
-
-    // brings the round to a conclusion and "turns off" each combatant
-    public void EndRound()
-    {
-        foreach (GameObject n in Combatants)
-        {
-            FighterStateMaschine FSM = n.GetComponent<FighterStateMaschine>();
-            FSM.fState = FighterStateMaschine.FighterState.Finished;
-        }
-    }
+    public void ExecuteTurns() { StartCoroutine(ActionSequence()); }
 
     // coroutine that will have each combatant execute their actions
     // it will wait until the combatant is finished fighting
-    IEnumerator ActionSequence()
+    public IEnumerator ActionSequence()
     {
-        foreach (GameObject m in Combatants)
+        foreach (GameObject i in Combatants.ToArray())
         {
-            FighterStateMaschine FSM = m.GetComponent<FighterStateMaschine>();
-            FSM.fState = FighterStateMaschine.FighterState.PerformAction;
-            yield return new WaitUntil(() => FSM.fState == FighterStateMaschine.FighterState.Waiting);
+            FighterStateMaschine FSM = i.GetComponent<FighterStateMaschine>();
+            if (FSM.fState != FighterStateMaschine.FighterState.Finished)
+            {
+                FSM.fState = FighterStateMaschine.FighterState.PerformAction;
+            }
+            
+            while (FSM.fState != FighterStateMaschine.FighterState.Finished)
+            {
+                yield return null;
+            }
         }
-        
+        bState = Act.End;
     }
 }

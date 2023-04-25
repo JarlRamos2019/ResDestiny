@@ -11,8 +11,9 @@ using UnityEngine;
 // =============================================================================
 // Description: Creates a state maschine for a combatant during a battle.
 //
-// Instructions: Attach this to a GameObject representing a combatant and tag
-// the GameObject as either an "Enemy" or an "Ally".
+// Instructions: Attach this to a GameObject representing a combatant that has
+// either the "Ally" or "Enemy" script attached and tag the GameObject as either
+// an "Enemy" or an "Ally".
 // =============================================================================
 
 public class FighterStateMaschine : MonoBehaviour
@@ -31,7 +32,7 @@ public class FighterStateMaschine : MonoBehaviour
     }
 
     private bool actionStarted = false;
-    private float animSpeed = 10f;
+    private readonly float animSpeed = 5f;
     public bool initFinished = false;
     public bool actionsOK = false;
     public int initRoll;
@@ -41,8 +42,7 @@ public class FighterStateMaschine : MonoBehaviour
     public Ally BaseAlly;
     public Enemy BaseEnemy;
     public FighterState fState;
-    public GameObject Selector;
-    public TurnHandler Actions;
+    public TurnHandler Actions = new TurnHandler();
     public StdAttack Attack;
 
     // note: Most of this class' methods will function differently depending
@@ -50,11 +50,15 @@ public class FighterStateMaschine : MonoBehaviour
     // it will read the tag of the GameObject that this script is attached to
     // to determine this
 
+    // IMPORTANT: All coroutines must be encapsulated in one state case with
+    // no other instructions or functions contained inside
+
     // Start is called before the first frame update
     void Start()
     {
+        BaseAlly = gameObject.GetComponent<Ally>();
+        BaseEnemy = gameObject.gameObject.GetComponent<Enemy>();
         bMaschine = GameObject.Find("BattleManager").GetComponent<BattleStateMaschine>();
-        Selector.SetActive(false);
         if (this.gameObject.CompareTag("Ally"))
         {
             // connection to GameObject's Ally script
@@ -104,6 +108,7 @@ public class FighterStateMaschine : MonoBehaviour
                 // chosen
                 if (this.gameObject.CompareTag("Ally"))
                 {
+                    AutoAllyChooseAction();
                     fState = FighterState.Waiting;
                 }
                 else if (this.gameObject.CompareTag("Enemy"))
@@ -123,6 +128,10 @@ public class FighterStateMaschine : MonoBehaviour
                 // when the combatant might receive damage, healing, or other
                 // external stimuli from other combatants
                 Die();
+                break;
+            case (FighterState.Finished):
+                // when the combatant is finished with their actions
+                ResetActions();
                 break;
             case (FighterState.Dead):
                 // when the combatant is dead
@@ -179,6 +188,24 @@ public class FighterStateMaschine : MonoBehaviour
             Actions.ActorsActions.Add(ActorsSetAction);
             --Actions.actorsAP;
         }
+        Actions.validated = true;
+    }
+
+    // when the ally combatant will automatically select its actions
+    public void AutoAllyChooseAction()
+    {
+        Actions.whoseTurn = BaseAlly.GetName();
+        Actions.ActorGameObject = this.gameObject;
+        while (Actions.actorsAP > 0)
+        {
+            SetAction ActorsSetAction = new SetAction();
+            ActorsSetAction.CurrentActor = this.gameObject;
+            ActorsSetAction.ActorsTarget = bMaschine.EnemiesInBattle[Random.Range(0, bMaschine.EnemiesInBattle.Count)];
+            ActorsSetAction.ActorsSkill = Attack;
+            Actions.ActorsActions.Add(ActorsSetAction);
+            --Actions.actorsAP;
+        }
+        Actions.validated = true;
     }
 
     // example of a simple damage-dealing function
@@ -230,10 +257,58 @@ public class FighterStateMaschine : MonoBehaviour
         }
     }
 
-    // simple coroutine simulating what happens during the fight
-    IEnumerator ExecuteActions()
+    // moves the GameObject towards the desired location
+    public bool MoveToLocation(Vector3 tar)
     {
-        fState = FighterState.Waiting;
-        yield return null;
+        return tar != (transform.position = Vector3.MoveTowards(transform.position, tar,
+                       animSpeed * Time.deltaTime));
+    }
+
+    public void ResetActions() { Actions.ActorsActions.Clear(); }
+
+    // simple coroutine simulating what happens during the fight
+    public IEnumerator ExecuteActions()
+    {
+        if (actionStarted)
+        {
+            yield break;
+        }
+
+        if (fState != FighterState.PerformAction)
+        {
+            yield break;
+        }
+
+        actionStarted = true;
+
+        foreach (SetAction i in Actions.ActorsActions.ToArray())
+        {
+            // travel to enemy the combatant wants to attack
+            Vector3 targetPosition = new Vector3(i.ActorsTarget.transform.position.x - 1.0f,
+                                                 i.ActorsTarget.transform.position.y,
+                                                 i.ActorsTarget.transform.position.z - 1.0f);
+            while (MoveToLocation(targetPosition)) {yield return null;}
+            yield return new WaitForSeconds(0.1f);
+
+            // exchange hits and do damage
+            string n = "";
+            if (this.gameObject.CompareTag("Ally"))
+            {
+                n = BaseAlly.GetName();
+            }
+            else if (this.gameObject.CompareTag("Enemy"))
+            {
+                n = BaseEnemy.GetName();
+            }
+            Debug.Log(n + " attacks!");
+            yield return new WaitForSeconds(0.05f);
+        }
+        // return to original position
+        Vector3 originalPosition = startPosition;
+        while (MoveToLocation(originalPosition)) { yield return null; }
+
+        actionStarted = false;
+        
+        fState = FighterState.Finished;
     }
 }
