@@ -1,6 +1,8 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
+using TMPro;
 
 //---------------------------------------------------
 // NAME: Jarl Ramos/Geoffrey De Palme
@@ -63,17 +65,52 @@ public class GameStateMaschine : MonoBehaviour
     public Dialogue diag;
     public Menu menu;
 
+    
+    
+    public List<GameObject> MonsterParty = new List<GameObject>();
+    public List<GameObject> poolOfJobs = new List<GameObject>();
+    public static GameStateMaschine Instance;
+    public GameObject PlayerParty;
+    public GameObject dialogueBox;
+    public GameObject mainMenuBox;
+    public GameObject menuInterface;
+    public TextMeshProUGUI currentDialogue;
+    public Vector3 positionOnWorldMap;
+
+    private void Awake()
+    {
+        if (Instance != null)
+        {
+            Destroy(gameObject);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
+        PlayerParty.GetComponent<Party>().gold.SetVal(0);
+        PlayerParty.GetComponent<Party>().PartyXP.SetVal(0);
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        gState = GameState.Idle;
+        gState = GameState.Map;
         diag   = Dialogue.Off;
-        menu   = Menu.Off;
+        menu   = Menu.Off;   
     }
 
     // Update is called once per frame
     void Update()
     {
+        /*
+        else if (Input.GetKeyDown(KeyCode.Q) && gState == GameState.Menu)
+        {
+            mainMenuBox.SetActive(false);
+            Debug.Log("Entered map");
+            gState = GameState.Map;
+        }
+        */
+
         // manages the game state
         switch (gState)
         {
@@ -83,6 +120,13 @@ public class GameStateMaschine : MonoBehaviour
                 menu = Menu.MainMenu;
                 break;
             case (GameState.Map):
+                positionOnWorldMap = PlayerParty.transform.GetChild(0).transform.position;
+                if (Input.GetKeyDown(KeyCode.K))
+                {
+                    menuInterface.SetActive(true);
+                    Debug.Log("Entered menu");
+                    gState = GameState.Menu;
+                }
                 break;
             case (GameState.Battle):
                 break;
@@ -98,13 +142,13 @@ public class GameStateMaschine : MonoBehaviour
             case (Dialogue.Off):
                 break;
             case (Dialogue.Activate):
-                // SetActive(true) the dialogue box
+                dialogueBox.SetActive(true);
                 diag = Dialogue.On;
                 break;
             case (Dialogue.On):
                 break;
             case (Dialogue.Deactivate):
-                // SetActive(false) the dialogue box
+                dialogueBox.SetActive(false);
                 diag = Dialogue.Off;
                 break;
         }
@@ -136,4 +180,70 @@ public class GameStateMaschine : MonoBehaviour
                 break;
         } 
     }
+
+    public void EnterDialogue(string[] lines)
+    {
+        dialogueBox.GetComponent<DialogueBox>().lines = lines;
+        diag = Dialogue.Activate;
+    }
+
+    public void EnterBattle(GameObject troop)
+    {
+        gState = GameState.Battle;
+        MonsterParty = UnpackMonsters(troop);
+        for (int i = 0; i < PlayerParty.transform.childCount; ++i)
+        {
+            // PlayerParty.transform.GetChild(i).transform.position = new Vector3(0, 0, 0);
+        }
+        SceneManager.LoadScene("SampleScene", LoadSceneMode.Single);
+        // change the scene... 
+    }
+
+    public List<GameObject> UnpackMonsters(GameObject troop)
+    {
+        List<GameObject> result = new List<GameObject>();
+
+        foreach (GameObject i in troop.GetComponent<MonsterTroop>().monsters)
+        {
+            i.gameObject.SetActive(true);
+            i.transform.SetParent(null);
+            result.Add(i);
+            Destroy(troop.gameObject);
+        }
+        return result;
+    }
+
+    private void OnEnable()
+    {
+        SceneManager.sceneLoaded += OnSceneLoaded;
+    }
+
+    private void OnDisable()
+    {
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+    }
+
+    private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
+    {
+        if (scene.name == "SampleScene")
+        {
+            GameObject manager = GameObject.Find("BattleManager");
+            if (manager)
+            {
+                Debug.Log("Battle manager exists");
+                // manager.GetComponent<BattleStateMaschine>().InstantiateAllAllies(PlayerParty.GetComponent<Party>().ReleasePartyMembers());
+            }
+        }
+
+    }
+
+    
+    public void ReinitializeParty()
+    {
+        foreach (GameObject i in GameObject.FindGameObjectsWithTag("Ally"))
+        {
+            i.transform.SetParent(PlayerParty.transform);
+        }
+    }
+    
 }

@@ -27,4 +27,6 @@ public class Enemy : Actor
 
     public Rarity EnemyRarity;
     public Statistic MoneyDrop;
+    public List<GameObject> enemyLoot = new List<GameObject>();
+    public Statistic enemyXP;
 }

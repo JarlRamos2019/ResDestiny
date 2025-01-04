@@ -14,11 +14,12 @@ using UnityEngine;
 // pertaining to player characters in the game.
 // --------------------------------------------------
 
+[System.Serializable]
 public class Ally : Actor
 {
-    public BaseRPGClass ActiveClass;
-    public BaseRPGClass ActiveSubCl;
-    public List<BaseRPGClass> AllysClasses = new List<BaseRPGClass>();
+    public GameObject ActiveClass;
+    public GameObject ActiveSubCl;
+    public List<GameObject> AllysClasses = new List<GameObject>();
 
     public BasePersonality AllyPers;
 
@@ -42,30 +43,34 @@ public class Ally : Actor
         // this will determine the bools for each trait
     }
 
-    public BasePersonality DeterminePers()
+    public void DeterminePers()
     {
         // supposed to contain all 32 personalities
 
         if (isOp && isCo && isEx && isAn && isNe)
         {
-            return gameObject.AddComponent<Exemplar>();
+            /*
+            PersLibrary persLibrary = gameObject.AddComponent<PersLibrary>();
+            AllyPers = persLibrary.Exemplar;
+            */
+            
         }
         else
         {
-            return null;
+  
         } 
     }
 
     // allows the player to change a character's class
-    public void ChangeClass(BaseRPGClass rpgClass)
+    public void ChangeClass(GameObject rpgClass)
     {
         bool isPresentInList = false;
         ActiveClass = rpgClass;
-        ActiveClass.BaseAlly = this;
-        foreach (BaseRPGClass c in AllysClasses)
+        ActiveClass.GetComponent<BaseRPGClass>().BaseAlly = this;
+        foreach (GameObject c in AllysClasses)
         {
-            string cName1 = c.GetRPGClassName();
-            string cName2 = rpgClass.GetRPGClassName();
+            string cName1 = c.GetComponent<BaseRPGClass>().GetRPGClassName();
+            string cName2 = rpgClass.GetComponent<BaseRPGClass>().GetRPGClassName();
             if (cName1 == cName2)
             {
                 isPresentInList = true;
@@ -76,6 +81,11 @@ public class Ally : Actor
         {
             AllysClasses.Add(rpgClass);
         } 
+    }
+
+    public void LevelUp()
+    {
+
     }
 
 }

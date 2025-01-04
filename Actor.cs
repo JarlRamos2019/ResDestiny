@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
 //---------------------------------------------------
 // NAME: Jarl Ramos/Geoffrey De Palme
@@ -20,6 +21,21 @@ using UnityEngine;
 [System.Serializable]
 public class Actor : MonoBehaviour
 {
+
+    public static Actor instance;
+
+    void Awake()
+    {
+      /*  
+        if (instance != null && instance != this)
+        {
+            Destroy(gameObject);
+            return;
+        }
+        instance = this;
+        DontDestroyOnLoad(gameObject);
+      */
+    }
     [SerializeField] protected string actorName;
 
     public Statistic ActorWeight;
@@ -41,6 +57,7 @@ public class Actor : MonoBehaviour
     public Statistic CurMP;  // Current MP
     public Statistic MaxHP;  // Max HP
     public Statistic MaxMP;  // Max MP
+    public Statistic CurAC;
     public Statistic AP;     // Action Points
     public Statistic PAT;    // Physical Attack
     public Statistic PDE;    // Physical Defense
@@ -69,20 +86,24 @@ public class Actor : MonoBehaviour
     public Statistic Sta;  // Stagger Rate
 
     public List<CompResistance> Resistances;
-    public List<BaseSkill> ActorSkills;
+    public List<GameObject> ActorSkills;
     public Inventory ActorInventory;
+    public Image actorIcon;
 
-    /*
-    public void ApplyMods(Modifier mod)
+    public void GenerateSecondaryStatistics()
     {
-        //TODO: Feed in a modifier to change stats
+
     }
-    */
 
     // gets actor name
     public string GetName()
     {
         return actorName;
+    }
+
+    public void SetName(string newName)
+    {
+        actorName = newName;
     }
 }
 
