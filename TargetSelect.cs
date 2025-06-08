@@ -10,7 +10,7 @@ public class TargetSelect : MonoBehaviour
     {
         target = theTarget;
         targetName.text = theTarget.GetComponent<Actor>().GetName();
-        targetIcon = theTarget.GetComponent<Actor>().actorIcon;
+        targetIcon.sprite = theTarget.GetComponent<Actor>().actorIcon.sprite;
     }
     // Start is called before the first frame update
     void Start()

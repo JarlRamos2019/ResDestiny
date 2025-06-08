@@ -22,6 +22,7 @@ public class Party : MonoBehaviour
         instance = this;
       
         DontDestroyOnLoad(gameObject);
+        // PartyInventory = gameObject.AddComponent<Inventory>();
     }
     private List<GameObject> MainParty = new List<GameObject>();
     private List<GameObject> ReserveParty = new List<GameObject>();
@@ -32,6 +33,7 @@ public class Party : MonoBehaviour
     public Statistic gold;
     public int partyLevel;
     public Inventory PartyInventory;
+    public List<GameObject> availableJobs;
 
     void Start()
     {

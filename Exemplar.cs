@@ -1,22 +1,36 @@
+// =============================================================================
+// FILE: Exemplar.cs
+// GAME: Resonant Destiny
+//
+// DESCRIPTION:
+// Defines the Exemplar personality.
+// =============================================================================
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-//
-// Jarl Ramos
-// Resonant Destiny Computer Entertainment Laboratory
-// Exemplar.cs
-// 16 August 2022
-//
-
+/// <summary>
+/// The examplar personality class
+/// </summary>
 public class Exemplar : BasePersonality
 {
-    /*
-    public Exemplar(float s, float a, float v, float e, float d, float c,
-        float l, float i, float p, string name, string desc, List<CompResistance> res) : base (s, a, v, e,
-            d, c, l, i, p, name, desc, res)
-    {
 
+    /// <summary>
+    /// Constructor
+    /// </summary>
+    public Exemplar()
+    {
+        personalityName = Constants.EXEMPLAR;
+        personalityDesc = "description goes here";
+        stModifier = 1.8f;
+        agModifier = 1.8f;
+        viModifier = 1.4f;
+        enModifier = 1.1f;
+        deModifier = 1.6f;
+        chModifier = 1.8f;
+        luModifier = 1.05f;
+        inModifier = 1.8f;
+        peModifier = 1.1f;
     }
-    */
 }

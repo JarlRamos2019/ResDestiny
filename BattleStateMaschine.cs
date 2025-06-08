@@ -53,6 +53,7 @@ public class BattleStateMaschine : MonoBehaviour
     public Act bState;
     public PlayerGUI actorInput;
     public TurnHandler AllysChoice;
+    public GameObject apBar;
     public GameObject canvas;
     public GameObject statBar;
     public GameObject initialCommand;
@@ -175,8 +176,8 @@ public class BattleStateMaschine : MonoBehaviour
                 //bState = Act.SwitchCharacter;
                 break;
             case Act.SwitchCharacter:
+                CleanUpAPBar();
                 ++selectedAlly;
-
                 while (selectedAlly < AlliesInBattle.Count &&
                        AlliesInBattle[selectedAlly].GetComponent<FighterStateMaschine>().fState == FighterStateMaschine.FighterState.Dead)
                 {
@@ -219,6 +220,7 @@ public class BattleStateMaschine : MonoBehaviour
         switch (actorInput)
         {
             case (PlayerGUI.Idle):
+                apBar.gameObject.SetActive(false);
                 break;
             case (PlayerGUI.Initial):
                 initialSelected = 0;
@@ -228,6 +230,7 @@ public class BattleStateMaschine : MonoBehaviour
                 break;
             case (PlayerGUI.Setup):
                 CleanUpAllMenus();
+                apBar.gameObject.SetActive(true);
                 if (!mainActive)
                 {
                     mainActive = SetCharacterInterface();
@@ -246,6 +249,8 @@ public class BattleStateMaschine : MonoBehaviour
                 SelectTargetFromMenu();
                 break;
         }
+
+        apBar.GetComponent<APBar>().apNum.text = currentAP.ToString();
     }
 
     public void InstantiateAllAllies(List<GameObject> alliesParty)
@@ -458,6 +463,9 @@ public class BattleStateMaschine : MonoBehaviour
             List<GameObject> theTargets = new List<GameObject>();
             theTargets.Add(targetContent.transform.GetChild(targetIndex).GetComponent<TargetSelect>().target); 
             currentSetActions.Add(AssembleSetAction(theTargets));
+            APBar theAPBar = apBar.GetComponent<APBar>();
+            GameObject iconOfSkill = Instantiate(theAPBar.apIconPrefab, theAPBar.SkillContent);
+            iconOfSkill.GetComponent<APIconScript>().Initialize(theCommand.skillIcon);
             --currentAP;
            
             Debug.Log("Target count: " + currentSetActions[currentSetActions.Count - 1].ActorsTarget.Count);
@@ -536,7 +544,7 @@ public class BattleStateMaschine : MonoBehaviour
     public void BringUpAllSkillsOfChosenCharacter()
     {
         Debug.Log("name is " + AlliesInBattle[selectedAlly].GetComponent<Ally>().GetName());
-        List<GameObject> skills = AlliesInBattle[selectedAlly].GetComponent<Actor>().ActorSkills;
+        List<GameObject> skills = AlliesInBattle[selectedAlly].GetComponent<Actor>().ActorsPreparedSkills;
         foreach (GameObject i in skills)
         {
             GameObject newSelect = Instantiate(skillSelectPrefab, mainContent);
@@ -631,6 +639,14 @@ public class BattleStateMaschine : MonoBehaviour
 
     }
 
+    public void CleanUpAPBar()
+    {
+        foreach (Transform i in apBar.GetComponent<APBar>().SkillContent)
+        {
+            GameObject.Destroy(i.gameObject);
+        }
+    }
+
     public void CleanUpAllMenus()
     {
         foreach (Transform i in mainContent.transform)
@@ -704,7 +720,7 @@ public class BattleStateMaschine : MonoBehaviour
         party.PartyXP.Modify(xpGained);
         foreach (GameObject i in loot)
         {
-            party.PartyInventory.AddItem(i.GetComponent<Item>());
+            party.PartyInventory.AddItem(i);
         }
         gMaschine.gState = GameStateMaschine.GameState.Map;
         StartCoroutine(WaitForVictoryToEnd());

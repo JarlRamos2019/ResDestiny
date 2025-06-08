@@ -65,10 +65,4 @@ public class InitialMenu : MonoBehaviour
     }
 }
 
-public enum InitialSelected
-{
-    Engage,
-    LineUp,
-    Brawl,
-    Retreat
-}
+

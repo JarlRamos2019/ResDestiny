@@ -219,7 +219,7 @@ public class FighterStateMaschine : MonoBehaviour
         Actions.whoseTurn = BaseEnemy.GetName();
         Actions.ActorGameObject = this.gameObject;
         List<GameObject> skillList = new List<GameObject>();
-        skillList = gameObject.GetComponent<Actor>().ActorSkills;
+        skillList = gameObject.GetComponent<Actor>().ActorsPreparedSkills;
         int enemyAP = gameObject.GetComponent<Actor>().AP.GetVal();
 
         if (skillList.Count == 0)

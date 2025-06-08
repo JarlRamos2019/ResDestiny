@@ -25,7 +25,7 @@ public class SkillSelect : MonoBehaviour
         {
             cost.text = "";
         }
-        skillIcon = theSkill.GetComponent<BaseSkill>().skillIcon;
+        skillIcon.sprite = theSkill.GetComponent<BaseSkill>().skillIcon.sprite;
         componentIcons = theSkill.GetComponent<BaseSkill>().componentIcons;
     }
     // Start is called before the first frame update

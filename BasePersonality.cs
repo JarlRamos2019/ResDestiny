@@ -1,55 +1,99 @@
+// =============================================================================
+// FILE: BasePersonality.cs
+// GAME: Resonant Destiny
+//
+// DESCRIPTION:
+// Defines the basic structure of a personality.
+// =============================================================================
+
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-// =============================================================================
-// NAME: Jarl Ramos / Geoffrey De Palme
-// GAME: Project R.D./Resonant Destiny
-// ORGN: Unity - RD Prototype I
-// FILE: BasePersonality.cs
-// DATE: 16 August 2022
-// =============================================================================
-
-[System.Serializable]
 public class BasePersonality : MonoBehaviour
 {
+    /// <summary>
+    /// The name of the personality
+    /// </summary>
+    protected string personalityName;
+    /// <summary>
+    /// The description of the personality
+    /// </summary>
+    protected string personalityDesc;
+    /// <summary>
+    /// The modifier to the Strength statistic upon leveling up
+    /// </summary>
+    protected float stModifier;
+    /// <summary>
+    /// The modifier to the Agility statistic upon leveling up
+    /// </summary>
+    protected float agModifier;
+    /// <summary>
+    /// The modifier to the Vitality statistic upon leveling up
+    /// </summary>
+    protected float viModifier;
+    /// <summary>
+    /// The modifier to the Endurance statistic upon leveling up
+    /// </summary>
+    protected float enModifier;
+    /// <summary>
+    /// The modifier to the Devotion statistic upon leveling up
+    /// </summary>
+    protected float deModifier;
+    /// <summary>
+    /// The modifier to the Charisma statistic upon leveling up
+    /// </summary>
+    protected float chModifier;
+    /// <summary>
+    /// The modifier to the Luck statistic upon leveling up
+    /// </summary>
+    protected float luModifier;
+    /// <summary>
+    /// The modifier to the Intelligence statistic upon leveling up
+    /// </summary>
+    protected float inModifier;
+    /// <summary>
+    /// The modifier to the Perception statistic upon leveling up
+    /// </summary>
+    protected float peModifier;
+    /// <summary>
+    /// The list of component resistances associated with the personality
+    /// </summary>
+    protected List<CompResistance> PersonalityResistances = new List<CompResistance>();
 
-    /*
-    public BasePersonality(float s, float a, float v, float e, float d, float c,
-        float l, float i, float p, string name, string desc, List<CompResistance> res)
+    /// <summary>
+    /// Sets the main perk of the personality on the appropriate targets
+    /// </summary>
+    /// <param name="affectedAllies">The affected target allies</param>
+    protected virtual void OnSetPerk(List<Ally> affectedAllies)
     {
-        stAmp = s;
-        agAmp = a;
-        viAmp = v;
-        enAmp = e;
-        deAmp = d;
-        chAmp = c;
-        luAmp = l;
-        inAmp = i;
-        peAmp = p;
-        PersResistances = res;
+
     }
-    */
 
-    public float stAmp;
-    public float agAmp;
-    public float viAmp;
-    public float enAmp;
-    public float deAmp;
-    public float chAmp;
-    public float luAmp;
-    public float inAmp;
-    public float peAmp;
+    /// <summary>
+    /// Sets the main drawback of the personality on the appropriate targets
+    /// </summary>
+    /// <param name="affectedAllies">The affected target allies</param>
+    protected virtual void OnSetDrawback(List<Ally> affectedAllies)
+    {
 
-    public string persName;
-    public string persDesc;
+    }
 
-    public string GetName() { return persName; }
-    public string GetDesc() { return persDesc; }
+    /// <summary>
+    /// Unsets the main perk of the personality on the appropriate targets
+    /// </summary>
+    /// <param name="affectedAllies">The affected target allies</param>
+    protected virtual void OnUnsetPerk(List<Ally> affectedAllies)
+    {
 
-    public List<CompResistance> PersResistances = new List<CompResistance>();
+    }
 
-    public delegate void PersEffects();
-    public PersEffects pEffectsOnChange;
-    public PersEffects pEffectsOnRevert;
+    /// <summary>
+    /// Unsets the main drawback of the personality on the appropriate targets
+    /// </summary>
+    /// <param name="affectedAllies">The affected target allies</param>
+    protected virtual void OnUnsetDrawback(List<Ally> affectedAllies)
+    {
+
+    }
 }

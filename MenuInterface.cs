@@ -87,16 +87,3 @@ public class MenuInterface : MonoBehaviour
     }
 }
 
-public enum Menu
-{
-    MainMenu,
-    Inventory,
-    Equipment,
-    Jobs,
-    Skills,
-    Status,
-    // Journal,
-    LineUp,
-    Misc,
-    QuickSave,
-}

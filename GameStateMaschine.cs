@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using UnityEngine.SceneManagement;
 using TMPro;
 
@@ -76,6 +77,7 @@ public class GameStateMaschine : MonoBehaviour
     public GameObject menuInterface;
     public TextMeshProUGUI currentDialogue;
     public Vector3 positionOnWorldMap;
+    public CompScript comps;
 
     private void Awake()
     {
@@ -121,7 +123,7 @@ public class GameStateMaschine : MonoBehaviour
                 break;
             case (GameState.Map):
                 positionOnWorldMap = PlayerParty.transform.GetChild(0).transform.position;
-                if (Input.GetKeyDown(KeyCode.K))
+                if (Input.GetKeyDown(KeyCode.J))
                 {
                     menuInterface.SetActive(true);
                     Debug.Log("Entered menu");
@@ -129,6 +131,7 @@ public class GameStateMaschine : MonoBehaviour
                 }
                 break;
             case (GameState.Battle):
+                menuInterface.gameObject.SetActive(false);
                 break;
             case (GameState.Cutscene):
                 break;
@@ -181,9 +184,18 @@ public class GameStateMaschine : MonoBehaviour
         } 
     }
 
-    public void EnterDialogue(string[] lines)
+    public void EnterDialogue(List<string> lines, string speakerName, Image speakerIcon)
     {
         dialogueBox.GetComponent<DialogueBox>().lines = lines;
+        dialogueBox.GetComponent<DialogueBox>().speakerName.text = speakerName;
+        if (speakerIcon != null)
+        {
+            dialogueBox.GetComponent<DialogueBox>().theCurrentIcon = speakerIcon;
+        }
+        else
+        {
+            dialogueBox.GetComponent<DialogueBox>().theCurrentIcon = null;
+        }
         diag = Dialogue.Activate;
     }
 
